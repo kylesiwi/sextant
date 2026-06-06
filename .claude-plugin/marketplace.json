@@ -14,7 +14,7 @@
       "name": "sextant",
       "source": "./",
       "description": "Graph context, cerebrum, bug history, token ledger, cross-session continuity via hook side-effects",
-      "version": "0.39.0",
+      "version": "0.40.0",
       "category": "context",
       "tags": [
         "context",
