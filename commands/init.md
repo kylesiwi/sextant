@@ -7,7 +7,7 @@ Bootstrap the `.sextant/` directory tree in the current working directory. This 
 
 ## Step 1 — scan for predecessor / hook-collision conflicts
 
-Run the conflict scanner BEFORE creating any files. Sextant detects predecessor plugins (OpenWolf, Graphify, openwolf-graphify-bridge), hook collisions, and statusLine collisions, but never modifies another plugin's config — the policy is to surface findings + explicit remediation steps.
+Run the conflict scanner BEFORE creating any files. Sextant detects predecessor plugins (OpenWolf, Graphify, openwolf-graphify-bridge) and hook collisions, but never modifies another plugin's config — the policy is to surface findings + explicit remediation steps.
 
 ```bash
 node "${CLAUDE_PLUGIN_ROOT}/bin/conflicts.mjs" --root "$PWD"

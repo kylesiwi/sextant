@@ -79,7 +79,9 @@ This creates `.sextant/` and bootstraps the rule store, bug log, and config.
 
 `doctor` verifies the plugin is installed, the hooks are live, the project state is coherent, and lints the rule store for problems. Run it any time something feels off.
 
-**Statusline (work in progress).** Sextant ships a statusline that shows context density, open bugs, the review queue, and a live per-turn pulse of rule fires and reads. Installing it writes to `~/.claude/`, which Claude Code's sandbox blocks from inside a session, so `/sextant:install-statusline` hands you a small script to run from a normal terminal. It works, but the polish is still in progress.
+**Statusline (removed — returning in a later version).** Earlier releases shipped an optional statusline. It has been removed for now so it can be rebuilt with terminal-output safety designed in from the ground up; everything it surfaced (context density, open bugs, review queue, per-turn pulse) is already covered by Sextant's `systemMessage` status lines, which stay on screen rather than refreshing away. There is no longer an `install-statusline` command.
+
+> **Upgrading from a release that had the statusline?** If you previously installed it, your `~/.claude/settings.json` still points `statusLine` at `~/.claude/sextant/statusline.mjs`, which will now render a frozen `sxt · ctx 0% / ● idle …` line. To remove it, delete the `statusLine` entry from `~/.claude/settings.json` and the `~/.claude/sextant/` directory (both must be edited from a normal terminal — Claude Code's sandbox blocks writes under `~/.claude/`).
 
 **Message verbosity.** By default Sextant only speaks up for real transitions. To see (or silence) more:
 
@@ -172,6 +174,6 @@ Hooks run from `bin/cli.mjs`, which dispatches each Claude Code event to a handl
 
 ## Status
 
-Sextant is built on Node 20+ (ESM throughout) with no runtime framework — the standard library, tree-sitter WASM grammars for the AST graph, and Lunr for rule search. Core rule injection, the graph, the gates, and cross-session continuity are solid and in daily use. The tranche workflow is functional and still maturing at the edges. The statusline works but its install flow and polish are in progress.
+Sextant is built on Node 20+ (ESM throughout) with no runtime framework — the standard library, tree-sitter WASM grammars for the AST graph, and Lunr for rule search. Core rule injection, the graph, the gates, and cross-session continuity are solid and in daily use. The tranche workflow is functional and still maturing at the edges. The statusline has been pulled for a from-scratch, safety-first rebuild in a later version.
 
 It's a per-project tool. Point it at a repo, let the hooks run, and it gets more useful the more the project teaches it.

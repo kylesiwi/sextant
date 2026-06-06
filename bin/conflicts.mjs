@@ -43,7 +43,7 @@ function usage() {
     'Usage: node bin/conflicts.mjs [--root <path>] [--json]\n' +
     '\n' +
     'Scan for conflicts with predecessor plugins (OpenWolf, Graphify,\n' +
-    'openwolf-graphify-bridge) plus generic hook/statusLine collisions.\n' +
+    'openwolf-graphify-bridge) plus generic hook collisions.\n' +
     '\n' +
     'Options:\n' +
     '  --root <path>  Project root to scan (default: $PWD).\n' +

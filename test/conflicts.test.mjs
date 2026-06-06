@@ -112,42 +112,6 @@ test('dual-bug-store: missing .sextant/bugs.json does NOT trigger', async (t) =>
   assert.ok(!findings.some((f) => f.kind === 'dual-bug-store'));
 });
 
-test('statusline-collision: non-sextant statusLine triggers medium', async (t) => {
-  const cwd = freshDir(t);
-  const home = freshDir(t);
-  writeJson(path.join(home, '.claude', 'settings.json'), {
-    statusLine: { type: 'command', command: 'echo "hi from openwolf-statusline"' },
-  });
-
-  const findings = await detectConflicts({ cwd, home });
-  assert.equal(findings.length, 1);
-  assert.equal(findings[0].kind, 'statusline-collision');
-  assert.equal(findings[0].severity, 'medium');
-  assert.match(findings[0].location, /settings\.json#statusLine\.command/);
-});
-
-test('statusline-collision: sextant in statusLine command does NOT trigger', async (t) => {
-  const cwd = freshDir(t);
-  const home = freshDir(t);
-  writeJson(path.join(home, '.claude', 'settings.json'), {
-    statusLine: { type: 'command', command: 'node ~/.claude/sextant/statusline.mjs' },
-  });
-
-  const findings = await detectConflicts({ cwd, home });
-  assert.deepEqual(findings, []);
-});
-
-test('statusline-collision: empty command does NOT trigger', async (t) => {
-  const cwd = freshDir(t);
-  const home = freshDir(t);
-  writeJson(path.join(home, '.claude', 'settings.json'), {
-    statusLine: { type: 'command', command: '' },
-  });
-
-  const findings = await detectConflicts({ cwd, home });
-  assert.deepEqual(findings, []);
-});
-
 test('predecessor-hooks-user: openwolf path in user hooks triggers high', async (t) => {
   const cwd = freshDir(t);
   const home = freshDir(t);
@@ -294,9 +258,8 @@ test('malformed ~/.claude/settings.json → no throw; warning to stderr; other f
 
   // The wolf finding still arrives.
   assert.ok(findings.some((f) => f.kind === 'openwolf-bridge'));
-  // The malformed-JSON path should NOT have produced a hooks/statusline finding.
+  // The malformed-JSON path should NOT have produced a hooks finding.
   assert.ok(!findings.some((f) => f.kind === 'predecessor-hooks-user'));
-  assert.ok(!findings.some((f) => f.kind === 'statusline-collision'));
   // Stderr captured at least one warning line about malformed JSON.
   const all = stderrCaptured.join('');
   assert.match(all, /malformed JSON/);

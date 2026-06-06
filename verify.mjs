@@ -203,51 +203,6 @@ function checkCliExecutable() {
   ok('cli-executable');
 }
 
-function checkSettings() {
-  const p = path.join(HERE, 'settings.json');
-  if (!fileExists(p)) {
-    fail('settings-constrained', `missing: ${p}`);
-    return null;
-  }
-  const r = readJsonSafe(p);
-  if (!r.ok) {
-    fail('settings-constrained', `parse error: ${r.err.message}`);
-    return null;
-  }
-  const allowed = new Set(['agent', 'subagentStatusLine']);
-  const keys = Object.keys(r.value);
-  const stray = keys.filter((k) => !allowed.has(k));
-  if (stray.length) {
-    fail('settings-constrained', `disallowed top-level key(s): ${stray.join(',')}`);
-    return r.value;
-  }
-  ok('settings-constrained');
-  return r.value;
-}
-
-function checkSubagentStatusline(settings) {
-  if (!settings) {
-    fail('subagent-statusline', 'settings unavailable');
-    return;
-  }
-  const sub = settings.subagentStatusLine;
-  if (!sub || typeof sub !== 'object') {
-    fail('subagent-statusline', 'settings.subagentStatusLine missing');
-    return;
-  }
-  const cmd = sub.command;
-  if (typeof cmd !== 'string' || !cmd.includes('${CLAUDE_PLUGIN_ROOT}/statusline/subagent-statusline.mjs')) {
-    fail('subagent-statusline', `unexpected command: ${cmd}`);
-    return;
-  }
-  const target = path.join(HERE, 'statusline', 'subagent-statusline.mjs');
-  if (!fileExists(target)) {
-    fail('subagent-statusline', `script missing: ${target}`);
-    return;
-  }
-  ok('subagent-statusline');
-}
-
 function checkAgents() {
   const dir = path.join(HERE, 'agents');
   const required = ['sextant-reviewer.md', 'sextant-bugcapturer.md', 'sextant-richgraph.md'];
@@ -283,7 +238,7 @@ function checkAgents() {
 
 function checkSlashCommands() {
   const dir = path.join(HERE, 'commands');
-  const required = ['init.md', 'doctor.md', 'install-statusline.md', 'import-bridge.md', 'check-conflicts.md'];
+  const required = ['init.md', 'doctor.md', 'import-bridge.md', 'check-conflicts.md'];
   for (const name of required) {
     const p = path.join(dir, name);
     if (!fileExists(p)) {
@@ -291,36 +246,6 @@ function checkSlashCommands() {
       continue;
     }
     ok(`command:${name}`);
-  }
-}
-
-function checkStatuslineScripts() {
-  const files = ['statusline/statusline.mjs', 'statusline/subagent-statusline.mjs', 'statusline/launch.mjs'];
-  for (const rel of files) {
-    const p = path.join(HERE, rel);
-    if (!fileExists(p)) {
-      fail(`statusline:${rel}`, 'missing');
-      continue;
-    }
-    // Shebang check — read first line.
-    let firstLine = '';
-    try {
-      const buf = fs.readFileSync(p, 'utf8');
-      firstLine = buf.split(/\r?\n/, 1)[0] ?? '';
-    } catch (err) {
-      fail(`statusline:${rel}`, `read error: ${err.message}`);
-      continue;
-    }
-    if (firstLine !== '#!/usr/bin/env node') {
-      fail(`statusline:${rel}`, `shebang mismatch: "${firstLine}"`);
-      continue;
-    }
-    const s = syntaxCheck(p);
-    if (!s.ok) {
-      fail(`statusline:${rel}`, `syntax error: ${s.stderr.split('\n')[0]}`);
-      continue;
-    }
-    ok(`statusline:${rel}`);
   }
 }
 
@@ -548,11 +473,8 @@ async function main() {
   checkInlineHooks(manifest);
   checkHookCommands(manifest);
   checkCliExecutable();
-  const settings = checkSettings();
-  checkSubagentStatusline(settings);
   checkAgents();
   checkSlashCommands();
-  checkStatuslineScripts();
   await checkLibModules();
   await checkConflictsModule();
   checkNoLegacyShellScripts();

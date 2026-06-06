@@ -98,7 +98,7 @@ else
 fi
 echo
 
-# 5. Conflicts — predecessor plugins, hook collisions, statusLine collisions.
+# 5. Conflicts — predecessor plugins, hook collisions.
 # Read-only display. The dedicated /sextant:check-conflicts command does the
 # same scan and is the place to act on remediation. doctor never modifies
 # another plugin's files.

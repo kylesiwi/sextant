@@ -1,9 +1,9 @@
 ---
-description: Scan for conflicts with predecessor plugins (OpenWolf, Graphify, bridge) and other hook/statusLine collisions.
+description: Scan for conflicts with predecessor plugins (OpenWolf, Graphify, bridge) and other hook collisions.
 allowed-tools: [Bash]
 ---
 
-Scan the current project + the user's `~/.claude/` for predecessor plugins, hook collisions, and statusLine collisions. Detection is **read-only** — Sextant never modifies another plugin's files, even when it could fix the collision mechanically. The failure mode of a silent mis-edit (we wreck a config the user spent time tuning) is worse than the failure mode we'd be fixing (the user pays double-hook latency until they notice).
+Scan the current project + the user's `~/.claude/` for predecessor plugins and hook collisions. Detection is **read-only** — Sextant never modifies another plugin's files, even when it could fix the collision mechanically. The failure mode of a silent mis-edit (we wreck a config the user spent time tuning) is worse than the failure mode we'd be fixing (the user pays double-hook latency until they notice).
 
 ## Step 1 — run the conflict scanner
 

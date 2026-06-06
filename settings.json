@@ -1,6 +1,0 @@
-{
-  "subagentStatusLine": {
-    "type": "command",
-    "command": "node ${CLAUDE_PLUGIN_ROOT}/statusline/subagent-statusline.mjs"
-  }
-}

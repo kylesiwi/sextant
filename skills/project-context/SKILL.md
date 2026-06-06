@@ -33,8 +33,8 @@ If you want a machine-readable view (e.g., to feed another tool), pass
 node "${CLAUDE_PLUGIN_ROOT}/bin/context.mjs" --root "$PWD" --json
 ```
 
-If you already know the session id (e.g., the user pasted it from
-statusline output), pass it explicitly:
+If you already know the session id (e.g., the user provided it),
+pass it explicitly:
 
 ```bash
 node "${CLAUDE_PLUGIN_ROOT}/bin/context.mjs" --root "$PWD" --sid <session_id>

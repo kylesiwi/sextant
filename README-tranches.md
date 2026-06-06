@@ -320,9 +320,9 @@ A full orientation block at session start showing all tranches, their statuses, 
 
 After context compaction, the tranche state is restored at highest priority (dropped last during truncation). Even if compaction loses it, the next prompt re-reads `tranches.json` from disk.
 
-### Statusline
+### Checking tranche state
 
-When a feature is active, the statusline shows a chip like `T2:inflight` so you can see tranche state at a glance.
+Run `/sextant:tranche-status` any time to see the active feature and where each tranche sits in its lifecycle. Lifecycle transitions also surface inline via Sextant's `systemMessage` status lines.
 
 ---
 
@@ -383,4 +383,4 @@ Feature documents (charter, spec, tranche docs) live in your project tree and ar
 
 ## Projects without tranches
 
-If you don't use tranches, there is zero overhead. All tranche hooks check for an active feature first and return immediately when `workflow_state` is `IDLE` (the default). No `tranches.json` file is created until you run `/sextant:tranche-start`. The statusline chip is hidden. No context is injected.
+If you don't use tranches, there is zero overhead. All tranche hooks check for an active feature first and return immediately when `workflow_state` is `IDLE` (the default). No `tranches.json` file is created until you run `/sextant:tranche-start`. No context is injected.
