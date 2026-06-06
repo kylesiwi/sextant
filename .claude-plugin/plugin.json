@@ -1,0 +1,51 @@
+{
+  "name": "sextant",
+  "version": "0.36.6",
+  "description": "Graph context, cerebrum, bug history, token ledger, cross-session continuity via hook side-effects.",
+  "license": "MIT",
+  "homepage": "https://github.com/kylesiwi/sextant",
+  "author": { "name": "Kyle", "email": "kylecito.tr@gmail.com" },
+  "hooks": {
+    "SessionStart": [
+      { "hooks": [{ "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/bin/cli.mjs SessionStart" }] }
+    ],
+    "SessionEnd": [
+      { "hooks": [{ "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/bin/cli.mjs SessionEnd" }] }
+    ],
+    "UserPromptSubmit": [
+      { "hooks": [{ "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/bin/cli.mjs UserPromptSubmit" }] }
+    ],
+    "PreToolUse": [
+      { "matcher": "Read|Grep|Glob", "hooks": [{ "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/bin/cli.mjs PreToolUse" }] },
+      { "matcher": "Edit|Write|MultiEdit", "hooks": [{ "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/bin/cli.mjs PreToolUse" }] },
+      { "matcher": "Bash", "hooks": [{ "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/bin/cli.mjs PreToolUse" }] },
+      { "matcher": "Task|WebFetch|WebSearch|AskUserQuestion|NotebookEdit|mcp__.*", "hooks": [{ "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/bin/cli.mjs PreToolUse" }] }
+    ],
+    "PostToolUse": [
+      { "matcher": "Read|Grep|Glob", "hooks": [{ "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/bin/cli.mjs PostToolUse" }] },
+      { "matcher": "Edit|Write|MultiEdit", "hooks": [{ "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/bin/cli.mjs PostToolUse" }] },
+      { "matcher": "Bash", "hooks": [{ "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/bin/cli.mjs PostToolUse" }] }
+    ],
+    "PostToolUseFailure": [
+      { "hooks": [{ "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/bin/cli.mjs PostToolUseFailure" }] }
+    ],
+    "PreCompact": [
+      { "hooks": [{ "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/bin/cli.mjs PreCompact" }] }
+    ],
+    "PostCompact": [
+      { "hooks": [{ "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/bin/cli.mjs PostCompact" }] }
+    ],
+    "FileChanged": [
+      { "hooks": [{ "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/bin/cli.mjs FileChanged" }] }
+    ],
+    "Stop": [
+      { "hooks": [{ "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/bin/cli.mjs Stop" }] }
+    ],
+    "SubagentStop": [
+      { "hooks": [{ "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/bin/cli.mjs SubagentStop" }] }
+    ],
+    "Notification": [
+      { "hooks": [{ "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/bin/cli.mjs Notification" }] }
+    ]
+  }
+}

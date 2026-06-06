@@ -1,0 +1,28 @@
+{
+  "name": "sextant",
+  "version": "0.36.6",
+  "description": "Claude Code plugin: graph context, cerebrum, bug history, token ledger, cross-session continuity via hook side-effects",
+  "license": "MIT",
+  "type": "module",
+  "private": true,
+  "bin": {
+    "sextant-hook": "./bin/cli.mjs"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "verify": "node verify.mjs"
+  },
+  "dependencies": {
+    "lunr": "^2.3.9",
+    "web-tree-sitter": "^0.26.8"
+  },
+  "devDependencies": {
+    "tree-sitter-go": "^0.25.0",
+    "tree-sitter-javascript": "^0.25.0",
+    "tree-sitter-python": "^0.25.0",
+    "tree-sitter-rust": "^0.24.0",
+    "tree-sitter-typescript": "^0.23.2"
+  }
+}

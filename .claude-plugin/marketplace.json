@@ -1,0 +1,33 @@
+{
+  "name": "kylesiwi",
+  "owner": {
+    "name": "Kyle",
+    "email": "kylecito.tr@gmail.com",
+    "url": "https://github.com/kylesiwi"
+  },
+  "metadata": {
+    "description": "Kyle's plugins for Claude Code",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "sextant",
+      "source": "./",
+      "description": "Graph context, cerebrum, bug history, token ledger, cross-session continuity via hook side-effects",
+      "version": "0.36.6",
+      "category": "context",
+      "tags": [
+        "context",
+        "graph",
+        "knowledge-capture",
+        "memory"
+      ],
+      "homepage": "https://github.com/kylesiwi/sextant",
+      "license": "MIT",
+      "author": {
+        "name": "Kyle",
+        "email": "kylecito.tr@gmail.com"
+      }
+    }
+  ]
+}

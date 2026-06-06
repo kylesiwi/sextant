@@ -1,0 +1,43 @@
+node_modules/
+dist/
+.sextant/
+.DS_Store
+*.log
+coverage/
+
+# Design docs + working notes — kept local only.
+/AGENTS.md
+/GROUND_UP_DESIGN.md
+/HANDOFF*.md
+/TODO.md
+/LAT-TEST.md
+
+# The test suite is tracked — new *.test.mjs files are committed by default,
+# so coverage an agent adds can't silently vanish. Two non-source artifacts
+# stay local:
+#   - phase*-falsify.mjs: standalone falsification harnesses, not node:test
+#     files (run by hand during dev; they read the local-only design docs).
+#   - ss.png: scratch screenshot.
+/test/phase*-falsify.mjs
+/test/ss.png
+
+# Local-only handoff/working notes; not tracked in git.
+# (also covers docs/bugs/stophookbug.md and any other working bug notes)
+docs/
+
+# Local environment + editor dotfiles that live in the repo root — never
+# tracked. Root-anchored so same-named files deeper in the tree are unaffected.
+/.bash_profile
+/.bashrc
+/.profile
+/.zprofile
+/.zshrc
+/.gitconfig
+/.gitmodules
+/.ripgreprc
+/.mcp.json
+/.claude/
+# .idea / .vscode are char-device nodes here (WSL artifact), not dirs —
+# no trailing slash so the pattern matches regardless of file type.
+/.idea
+/.vscode
