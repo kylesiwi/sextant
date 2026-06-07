@@ -25,4 +25,4 @@ Reconciled cerebrum.md: high=0 low=2 unchanged=5 lines=7
 Total: high=0 low=2 unchanged=5 lines=7
 ```
 
-Pass that through to the user so they know if any `[provisional]` entries surfaced. If `low > 0`, recommend `/sextant:audit` to triage them.
+Pass that through to the user so they know if any `[provisional]` entries surfaced. If `low > 0`, recommend `/sextant:triage` to triage them.

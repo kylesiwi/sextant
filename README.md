@@ -146,7 +146,7 @@ You add rules with `/sextant:remember` (the agent is nudged to do this too). `/s
 
 **Bug history.** A searchable log of bugs you've debugged and fixed (`.sextant/bugs.json`), recorded with `/sextant:bug-log` and surfaced automatically when the agent reads a file a past bug touched. `/sextant:bug-search` queries it directly.
 
-**Health, audit, and review.** `/sextant:doctor` is the health check. `/sextant:audit` surfaces the provisional review queue and stale rules. `/sextant:review` proposes which rules to promote, which to demote (low-firing and cold), and which contradict each other — optionally handing the analysis to a review subagent.
+**Health, audit, and review.** `/sextant:doctor` is the health check. `/sextant:triage` surfaces the provisional review queue and stale rules. `/sextant:review` proposes which rules to promote, which to demote (low-firing and cold), and which contradict each other — optionally handing the analysis to a review subagent.
 
 **Browsing the cerebrum.** `/sextant:cerebrum-view` generates a single self-contained HTML file (`.sextant/cerebrum/cerebrum.html`) you open in a browser — tabs for rules, bugs, view-only settings, and the archive, with search and kind filters (path / keyword / global / other) over the rules. The data is baked in at generate time (a `file://` page can't read sibling files), so it's a snapshot: re-run to refresh.
 

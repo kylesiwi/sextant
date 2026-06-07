@@ -65,6 +65,6 @@ Replace `<SCOPE FLAGS>` with the flags from Step 1 (e.g. `--node "src/auth.ts"`,
 ## Step 3 — confirm
 
 The CLI prints the appended line (and rejects a mis-formatted rule with an actionable message). If it landed
-`[provisional]`, run `/sextant:audit` to give it a real scope. To turn a `[kw:…]` rule into a safety rule
+`[provisional]`, run `/sextant:triage` to give it a real scope. To turn a `[kw:…]` rule into a safety rule
 later, `/sextant:review` surfaces frequently-firing rules as promotion candidates with their hash — run
 `/sextant:promote --line-hash <hash>` (promote adds `[!]`, and only applies to keyword rules).

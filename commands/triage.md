@@ -1,5 +1,5 @@
 ---
-description: Audit the cerebrum — list the review queue, then optionally sweep for stale rules. Advisory only.
+description: Triage the cerebrum — list the review queue, then optionally sweep for stale rules. Advisory only.
 allowed-tools: [Bash, Read, AskUserQuestion]
 argument-hint: ""
 ---

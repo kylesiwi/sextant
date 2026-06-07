@@ -127,7 +127,7 @@ function parseArgs(argv) {
     else if (a === '--critical-keywords') {
       // cerebrum-v2 (T5): deprecated alias. The critical-`*` scoring model is
       // retired; its terms simply fold into the plain [kw:…] bucket. Preserved
-      // (not dropped) so existing /sextant:remember + /sextant:audit prose keeps
+      // (not dropped) so existing /sextant:remember + /sextant:triage prose keeps
       // working until T6 rewrites it. Set importance explicitly with --mandatory.
       out.criticalKeywords = argv[++i];
       process.stderr.write('cerebrum: --critical-keywords is deprecated (cerebrum-v2); its terms fold into [kw:…]. Set importance with --mandatory.\n');
@@ -334,7 +334,7 @@ async function cmdPromote(root, args) {
 
   // cerebrum-v2 T6: a [provisional] rule is in the review queue — promoting it
   // (adding [!]) does nothing until it's triaged (the kw resolver skips the
-  // exact-floor for provisional rules). Triage it first via /sextant:audit.
+  // exact-floor for provisional rules). Triage it first via /sextant:triage.
   if (original.buckets.includes('provisional') || original.buckets.includes('!review')) {
     process.stderr.write(
       'cerebrum promote: this rule is [provisional] (review queue) — [!] has no effect until it is triaged.\n' +

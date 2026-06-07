@@ -1,6 +1,6 @@
 {
   "name": "sextant",
-  "version": "0.42.0",
+  "version": "0.43.0",
   "description": "Graph context, cerebrum, bug history, token ledger, cross-session continuity via hook side-effects.",
   "license": "MIT",
   "homepage": "https://github.com/kylesiwi/sextant",

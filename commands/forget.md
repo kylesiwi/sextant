@@ -9,7 +9,7 @@ Archive a rule so it stops firing without losing the historical record. Identify
 ## Step 1 — get the line hash
 
 `cerebrum list` prints every rule in the store with its line hash — find the one you want to archive
-there. (`/sextant:audit` also prints hashes for the `[provisional]` review queue, and `/sextant:review`
+there. (`/sextant:triage` also prints hashes for the `[provisional]` review queue, and `/sextant:review`
 for rules flagged to promote or demote.)
 
 ## Step 2 — invoke the CLI

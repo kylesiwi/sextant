@@ -5,7 +5,7 @@ argument-hint: "<hash>"
 ---
 
 Promote a `[kw:…]` rule in `.sextant/cerebrum/cerebrum.md` to a **safety rule** by adding `[!]` in place.
-Identify the target with the short SHA-1 hash printed by `/sextant:audit`.
+Identify the target with the short SHA-1 hash printed by `/sextant:triage`.
 
 `[!]` is **keyword-only**: it gives a `[kw:…]` rule an exact word-boundary recall floor (it fires whenever a
 keyword literally appears, regardless of BM25 rank) plus a write-gate (an Edit/Write/MultiEdit whose change

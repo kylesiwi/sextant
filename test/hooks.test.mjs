@@ -1494,7 +1494,7 @@ test('postToolUse: Edit on cerebrum + old project edit → low-confidence + syst
   // systemMessage emitted with the auto_tag_low_conf nudge.
   assert.ok(result, 'expected a return envelope');
   assert.match(result.systemMessage, /\[provisional\]/);
-  assert.match(result.systemMessage, /\/sextant:audit/);
+  assert.match(result.systemMessage, /\/sextant:triage/);
 
   const state = await readState(sid);
   assert.equal(state.auto_tag.low_confidence_review, 1);
