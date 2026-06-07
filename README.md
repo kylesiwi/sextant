@@ -148,6 +148,8 @@ You add rules with `/sextant:remember` (the agent is nudged to do this too). `/s
 
 **Health, audit, and review.** `/sextant:doctor` is the health check. `/sextant:audit` surfaces the provisional review queue and stale rules. `/sextant:review` proposes which rules to promote, which to demote (low-firing and cold), and which contradict each other — optionally handing the analysis to a review subagent.
 
+**Browsing the cerebrum.** `/sextant:cerebrum-view` generates a single self-contained HTML file (`.sextant/cerebrum/cerebrum.html`) you open in a browser — tabs for rules, bugs, view-only settings, and the archive, with search and kind filters (path / keyword / global / other) over the rules. The data is baked in at generate time (a `file://` page can't read sibling files), so it's a snapshot: re-run to refresh.
+
 **Output as system messages.** Sextant talks through Claude Code's `systemMessage` channel, kept separate from the authoritative context it injects. Messages are color-coded and default-quiet — you only hear about real transitions unless you opt into `verbose`. The end-of-turn digest deduplicates repeated rule fires (a rule that fired four times shows once, as `(×4)`).
 
 **Cross-session continuity.** Snapshots at the end of each turn and before each compaction let the next session — or the next prompt after the context is compacted — pick up with the recent files, open todos, fired rules, and open bugs intact.
