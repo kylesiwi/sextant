@@ -1,6 +1,6 @@
 ---
 name: tranche-start
-description: Start a new feature plan with charter, spec, and tranche documents. Use when beginning a multi-tranche development effort.
+description: Start a new feature plan with charter, spec, and tranche documents. Use when beginning a multi-tranche development effort, a tranche sprint, or any "tranches feat". Contains the complete charter/spec/tranche templates and conventions — invoke this instead of copying an existing feature; no prior tranche or example is required, including the very first feature in a repo.
 ---
 
 # /sextant:tranche-start
@@ -8,6 +8,18 @@ description: Start a new feature plan with charter, spec, and tranche documents.
 Automated workflow that reads a user-provided plan or spec, then creates
 the full tranche document hierarchy (charter, spec, tranche docs) and
 registers the feature in `.sextant/tranches.json`.
+
+## Cold start — the first feature in a repo
+
+This skill is self-contained. Everything you need to build a conventional
+feature plan is in this document: the full `charter.md`, `spec.md`, and
+per-tranche templates below are the source of truth for the structure.
+
+You do **not** need a prior feature to copy from. If no `docs/feature-plans/`
+exist yet, that is normal — proceed directly from the templates here. Do not
+grep for an existing example to "match conventions"; the conventions live in
+Steps 3–5. Likewise, when `status` reports **no active feature**, that is the
+required precondition for starting one (one feature at a time) — not an error.
 
 ## Prerequisites
 
