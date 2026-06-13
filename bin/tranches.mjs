@@ -36,6 +36,7 @@ import {
   advanceTranche,
   setChecklistComplete,
   recordAmendment,
+  openAmendment,
   recordConcern,
   resolveConcern,
   openConcerns,
@@ -86,6 +87,8 @@ function parseArgs(argv) {
     id: null,
     target: null,
     note: null,
+    edits: null,
+    files: null,
     force: false,
     help: false,
   };
@@ -103,6 +106,8 @@ function parseArgs(argv) {
     else if (a === '--id') out.id = argv[++i];
     else if (a === '--target') out.target = normalizeTrancheId(argv[++i]);
     else if (a === '--note') out.note = argv[++i];
+    else if (a === '--edits') out.edits = argv[++i];
+    else if (a === '--files') out.files = argv[++i];
     else if (a === '--force') out.force = true;
     else if (a === '--help' || a === '-h') out.help = true;
     else {
@@ -296,14 +301,33 @@ async function cmdAmend(rootDir, args) {
   const state = await readTranches(rootDir);
   if (!state.feature) { process.stderr.write('tranches amend: no active feature\n'); return 1; }
 
+  // Edit budget (T4): default 1 edit, any file. --files scopes it; --files is
+  // REQUIRED when --edits > 1 so a multi-edit unlock can't be open-ended.
+  let edits = 1;
+  if (args.edits != null) {
+    edits = parseInt(args.edits, 10);
+    if (!Number.isFinite(edits) || edits < 1) {
+      process.stderr.write('tranches amend: --edits must be a positive integer\n');
+      return 1;
+    }
+  }
+  const files = (typeof args.files === 'string' && args.files.length > 0)
+    ? args.files.split(',').map((s) => s.trim()).filter(Boolean)
+    : null;
+  if (edits > 1 && (!files || files.length === 0)) {
+    process.stderr.write('tranches amend: --files <a,b,…> is required when --edits > 1 (a multi-edit unlock must be scoped to named files)\n');
+    return 1;
+  }
+
   recordAmendment(state, {
     trancheId: args.tranche || state.active_tranche_id,
     text: args.text,
   });
-  state.pending_amendment = true;
+  openAmendment(state, { files, edits, ts: new Date().toISOString() });
 
   await writeTranches(rootDir, state);
-  process.stdout.write(`Amendment recorded. Deny gates unlocked for next edit.\n`);
+  const scopeMsg = files ? `${files.length} named file(s)` : 'any file';
+  process.stdout.write(`Amendment recorded. Deny gates unlocked: ${edits} edit(s) to ${scopeMsg}, expires in 10 min.\n`);
   return 0;
 }
 

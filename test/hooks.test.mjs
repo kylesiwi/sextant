@@ -4452,7 +4452,18 @@ test('preToolUse tranche: pending_amendment unlocks shipped scope deny once', as
     assert.notEqual(first.hookSpecificOutput.permissionDecision, 'deny');
   }
 
-  // Flag consumed — second edit denied.
+  // T4: a bare `true` is a 1-edit any-file budget. It is consumed by the
+  // SUCCESSFUL edit (postToolUse), not the pre-hook — so simulate the success.
+  await postToolUse(
+    {
+      session_id: sid, cwd, tool_name: 'Edit',
+      tool_input: { file_path: path.join(cwd, 'src/a.ts') },
+      tool_response: { is_error: false },
+    },
+    makeCtx(sid, 'PostToolUse'),
+  );
+
+  // Budget exhausted — second edit re-denied.
   const second = await preToolUse(
     {
       session_id: sid,
@@ -4601,7 +4612,17 @@ test('preToolUse tranche: pending_amendment unlocks charter deny and is consumed
     assert.notEqual(result1.hookSpecificOutput.permissionDecision, 'deny');
   }
 
-  // Flag should be consumed — second edit should be denied
+  // T4: the budget is consumed by the SUCCESSFUL edit (postToolUse), not the pre-hook.
+  await postToolUse(
+    {
+      session_id: sid, cwd, tool_name: 'Edit',
+      tool_input: { file_path: path.join(cwd, 'docs/test-feat/charter.md') },
+      tool_response: { is_error: false },
+    },
+    makeCtx(sid, 'PostToolUse'),
+  );
+
+  // Budget exhausted — second edit should be denied
   const result2 = await preToolUse(
     {
       session_id: sid,

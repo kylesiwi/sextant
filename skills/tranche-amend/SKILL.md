@@ -26,21 +26,30 @@ node "${CLAUDE_PLUGIN_ROOT}/bin/tranches.mjs" amend \
   --root "$PWD"
 ```
 
-Optionally target a specific tranche (defaults to active):
+Optionally target a specific tranche (defaults to active), and scope the unlock:
 
 ```bash
 node "${CLAUDE_PLUGIN_ROOT}/bin/tranches.mjs" amend \
   --text "<description>" \
   --tranche "<id>" \
+  --edits <n> \
+  --files "<relpath,relpath,…>" \
   --root "$PWD"
 ```
 
+- `--edits <n>` — how many edits the amendment may make to frozen/shipped files
+  (default 1). Use this when one logical amendment spans several edits.
+- `--files <a,b,…>` — restrict the unlock to these project-relative paths.
+  **Required when `--edits > 1`** (a multi-edit unlock must name its files).
+  Omitted with `--edits 1`, the single edit may touch any file.
+
 ## What it does
 
-1. Records the amendment in `tranches.json` with a timestamp
-2. Sets `pending_amendment: true` — this flag unlocks deny gates for the
-   next edit attempt
-3. The flag is consumed after the amendment is processed
+1. Records the amendment in `tranches.json` with a timestamp.
+2. Opens an edit budget: `<n>` edits to the named files, valid for 10 minutes.
+3. Each successful edit to a frozen/shipped file spends one edit; when the budget
+   is exhausted (or the 10-minute window passes) the deny gates re-freeze. An edit
+   that fails does not spend the budget.
 
 ## After amending
 
