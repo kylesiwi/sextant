@@ -1,5 +1,5 @@
 ---
-description: Promote a keyword rule to a safety rule by adding the [!] importance flag (exact recall floor + write-gate).
+description: Promote a keyword rule to a safety rule by adding the [!] importance flag (exact word-boundary recall floor).
 allowed-tools: [Bash, Read, Write]
 argument-hint: "<hash>"
 ---
@@ -7,10 +7,14 @@ argument-hint: "<hash>"
 Promote a `[kw:…]` rule in `.sextant/cerebrum/cerebrum.md` to a **safety rule** by adding `[!]` in place.
 Identify the target with the short SHA-1 hash printed by `/sextant:triage`.
 
-`[!]` is **keyword-only**: it gives a `[kw:…]` rule an exact word-boundary recall floor (it fires whenever a
-keyword literally appears, regardless of BM25 rank) plus a write-gate (an Edit/Write/MultiEdit whose change
-contains a keyword pauses for approval). Promote therefore only applies to keyword rules — `node:`/`global` rules already
-fire by scope, so the CLI refuses to stamp a redundant `[!]` on them.
+`[!]` is **keyword-only**: it gives a `[kw:…]` rule an exact word-boundary recall floor — it fires whenever a
+keyword literally appears, regardless of BM25 rank, so the rule is injected as context 100% of the time on a
+matching Read/Edit/Write/Bash (never throttled like a general keyword fire). Promote therefore only applies to
+keyword rules — `node:`/`global` rules already fire by scope, so the CLI refuses to stamp a redundant `[!]` on them.
+
+> Note (v0.44.0): `[!]` no longer adds a write-gate that paused an edit for your approval. That gate
+> over-fired on ordinary edits and its reason could never render at the file-tool permission card, so it
+> was removed — a matched `[!]` rule now surfaces as injected context, not a permission prompt.
 
 ## Step 1 — get the line hash
 

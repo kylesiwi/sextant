@@ -42,7 +42,8 @@ Using the RULE MODEL printed above, review **every** rule for:
   everywhere → `[global]` (sparingly). Flag `[global]` rules that should be
   `[kw:]`/`[node:]`, and `[kw:]` rules with weak/generic keywords.
 - **Importance (`[!]` is kw-only)** — `[!]` is meaningful ONLY on `[kw:]` rules (it
-  adds the exact recall floor + the write-gate). Flag `[!]` sitting on a
+  adds the exact word-boundary recall floor — 100% injection on a keyword match,
+  never throttled; v0.44.0 removed the old write-gate). Flag `[!]` sitting on a
   `[node:]`/`[global]` rule as **redundant** (doctor WARNs these) — recommend
   dropping it. Flag a must-never-miss keyword safety rule that LACKS `[!]`.
 - **Staleness** — does a `[node:]` path still exist (doctor WARNs these)? Is the

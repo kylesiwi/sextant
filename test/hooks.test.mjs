@@ -3155,7 +3155,7 @@ async function seedCerebrum(cwd, kind, body) {
   return p;
 }
 
-test('preToolUse Phase 7: Edit on cerebrum/regular.md with malformed new line → permissionDecision=ask', async (t) => {
+test('preToolUse Phase 7: Edit on cerebrum/regular.md with malformed new line → permissionDecision=deny', async (t) => {
   await setupEnv(t);
   const sid = 'ptu7-malformed';
   const cwd = await freshProjectCwd(t);
@@ -3179,7 +3179,7 @@ test('preToolUse Phase 7: Edit on cerebrum/regular.md with malformed new line �
   assert.ok(result && result.hookSpecificOutput,
     `expected gate envelope; got ${JSON.stringify(result)}`);
   assert.equal(result.hookSpecificOutput.hookEventName, 'PreToolUse');
-  assert.equal(result.hookSpecificOutput.permissionDecision, 'ask');
+  assert.equal(result.hookSpecificOutput.permissionDecision, 'deny');
   assert.match(result.hookSpecificOutput.permissionDecisionReason, /structural gate/);
   assert.match(result.hookSpecificOutput.permissionDecisionReason, /schema/);
 
@@ -3187,6 +3187,36 @@ test('preToolUse Phase 7: Edit on cerebrum/regular.md with malformed new line �
   const state = await readState(sid);
   assert.equal(state.rules.deny_red, true, 'deny_red should be set');
   assert.ok((state.rules.blocked ?? 0) >= 1, 'rules.blocked should be bumped');
+});
+
+test('preToolUse Phase 7: SEXTANT_CEREBRUM_GATE=off disables the gate (no deny on a malformed line)', async (t) => {
+  await setupEnv(t);
+  // Kill-switch (v0.44.0): the gate denies (not asks) and a deny has no user
+  // override, so the env escape hatch must short-circuit it entirely.
+  withEnv(t, { SEXTANT_CEREBRUM_GATE: 'off' });
+  const sid = 'ptu7-killswitch';
+  const cwd = await freshProjectCwd(t);
+  const seed = '# Cerebrum\n\n- 2026-05-01: [!global] existing rule body long enough\n';
+  const cerebrumPath = await seedCerebrum(cwd, 'regular', seed);
+
+  // Same malformed addition the gate would normally deny.
+  const proposed = seed + '- 2026-05-10 [node:foo.ts] missing colon but otherwise long enough' + '\n';
+
+  const result = await preToolUse(
+    {
+      session_id: sid,
+      cwd,
+      tool_name: 'Write',
+      tool_input: { file_path: cerebrumPath, content: proposed },
+    },
+    makeCtx(sid, 'PreToolUse'),
+  );
+
+  // With the gate off, no permissionDecision is emitted — the write passes through.
+  if (result && result.hookSpecificOutput) {
+    assert.notEqual(result.hookSpecificOutput.permissionDecision, 'deny',
+      `kill-switch must suppress the deny; got ${JSON.stringify(result)}`);
+  }
 });
 
 test('preToolUse Phase 7: Edit on cerebrum/regular.md with VALID no-bucket line passes', async (t) => {
@@ -3240,7 +3270,7 @@ test('preToolUse Phase 7 (T3.5): Edit on cerebrum.md with VALID v2 buckets passe
   assert.equal(state.rules.deny_red, false, 'deny_red stays false on a valid v2 edit');
 });
 
-test('preToolUse Phase 7 (T3.5): the gate is ACTIVE on cerebrum.md (malformed line → ask)', async (t) => {
+test('preToolUse Phase 7 (T3.5): the gate is ACTIVE on cerebrum.md (malformed line → deny)', async (t) => {
   await setupEnv(t);
   const sid = 'ptu7-v2-malformed';
   const cwd = await freshProjectCwd(t);
@@ -3254,7 +3284,7 @@ test('preToolUse Phase 7 (T3.5): the gate is ACTIVE on cerebrum.md (malformed li
     makeCtx(sid, 'PreToolUse'),
   );
   assert.ok(result && result.hookSpecificOutput, 'gate must run on cerebrum.md');
-  assert.equal(result.hookSpecificOutput.permissionDecision, 'ask');
+  assert.equal(result.hookSpecificOutput.permissionDecision, 'deny');
   assert.match(result.hookSpecificOutput.permissionDecisionReason, /structural gate/);
 });
 
@@ -3285,7 +3315,7 @@ test('preToolUse Phase 7: Edit on a NON-cerebrum file → no gate, normal pass-t
   assert.equal(state.rules.deny_red, false, 'deny_red should remain false');
 });
 
-test('preToolUse Phase 7: Edit on cerebrum/regular.md with specificity violation → ask', async (t) => {
+test('preToolUse Phase 7: Edit on cerebrum/regular.md with specificity violation → deny', async (t) => {
   await setupEnv(t);
   const sid = 'ptu7-specificity';
   const cwd = await freshProjectCwd(t);
@@ -3307,11 +3337,11 @@ test('preToolUse Phase 7: Edit on cerebrum/regular.md with specificity violation
 
   assert.ok(result && result.hookSpecificOutput,
     `expected gate envelope; got ${JSON.stringify(result)}`);
-  assert.equal(result.hookSpecificOutput.permissionDecision, 'ask');
+  assert.equal(result.hookSpecificOutput.permissionDecision, 'deny');
   assert.match(result.hookSpecificOutput.permissionDecisionReason, /specificity/);
 });
 
-test('preToolUse Phase 7: Edit on cerebrum/mandatory.md without (by:) → ask', async (t) => {
+test('preToolUse Phase 7: Edit on cerebrum/mandatory.md without (by:) → deny', async (t) => {
   await setupEnv(t);
   const sid = 'ptu7-no-by';
   const cwd = await freshProjectCwd(t);
@@ -3331,12 +3361,12 @@ test('preToolUse Phase 7: Edit on cerebrum/mandatory.md without (by:) → ask', 
   );
 
   assert.ok(result && result.hookSpecificOutput);
-  assert.equal(result.hookSpecificOutput.permissionDecision, 'ask');
+  assert.equal(result.hookSpecificOutput.permissionDecision, 'deny');
   assert.match(result.hookSpecificOutput.permissionDecisionReason, /provenance/);
   assert.match(result.hookSpecificOutput.permissionDecisionReason, /by:/);
 });
 
-test('preToolUse Phase 7: Edit on cerebrum with a malformed rule → ask', async (t) => {
+test('preToolUse Phase 7: Edit on cerebrum with a malformed rule → deny', async (t) => {
   await setupEnv(t);
   const sid = 'ptu7-gate-malformed';
   const cwd = await freshProjectCwd(t);
@@ -3358,7 +3388,7 @@ test('preToolUse Phase 7: Edit on cerebrum with a malformed rule → ask', async
   );
 
   assert.ok(result && result.hookSpecificOutput);
-  assert.equal(result.hookSpecificOutput.permissionDecision, 'ask');
+  assert.equal(result.hookSpecificOutput.permissionDecision, 'deny');
   assert.match(result.hookSpecificOutput.permissionDecisionReason, /provenance|by:/);
 });
 
@@ -3387,7 +3417,7 @@ test('preToolUse Phase 7: Edit tool with old_string/new_string semantics drives 
 
   assert.ok(result && result.hookSpecificOutput,
     `expected gate envelope; got ${JSON.stringify(result)}`);
-  assert.equal(result.hookSpecificOutput.permissionDecision, 'ask');
+  assert.equal(result.hookSpecificOutput.permissionDecision, 'deny');
   assert.match(result.hookSpecificOutput.permissionDecisionReason, /schema/);
 });
 
@@ -3439,7 +3469,7 @@ test('preToolUse Phase 7: cerebrum file path absent on disk seeds an empty-exist
   );
 
   assert.ok(result && result.hookSpecificOutput);
-  assert.equal(result.hookSpecificOutput.permissionDecision, 'ask');
+  assert.equal(result.hookSpecificOutput.permissionDecision, 'deny');
   assert.match(result.hookSpecificOutput.permissionDecisionReason, /schema/);
 });
 
@@ -4469,11 +4499,11 @@ test('advanceTranche: IN-FLIGHT repoints active_tranche_id and sets IMPLEMENTING
   assert.equal(s.workflow_state, 'IMPLEMENTING');
 });
 
-// -- PreToolUse: checklist gate (ask) ---------------------------------------
+// -- PreToolUse: checklist gate (deny) --------------------------------------
 
-test('preToolUse tranche: asks when checklist incomplete on scope file', async (t) => {
+test('preToolUse tranche: denies when checklist incomplete on scope file', async (t) => {
   await setupEnv(t);
-  const sid = 'tranche-checklist-ask';
+  const sid = 'tranche-checklist-deny';
   const cwd = freshProjectDir(t);
 
   await seedTranches(cwd, (s) => {
@@ -4498,11 +4528,11 @@ test('preToolUse tranche: asks when checklist incomplete on scope file', async (
   );
 
   assert.ok(result);
-  assert.equal(result.hookSpecificOutput.permissionDecision, 'ask');
+  assert.equal(result.hookSpecificOutput.permissionDecision, 'deny');
   assert.ok(result.hookSpecificOutput.permissionDecisionReason.includes('checklist'));
 });
 
-test('preToolUse tranche: no ask when checklist complete', async (t) => {
+test('preToolUse tranche: no gate when checklist complete', async (t) => {
   await setupEnv(t);
   const sid = 'tranche-checklist-done';
   const cwd = freshProjectDir(t);

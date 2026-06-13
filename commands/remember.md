@@ -25,8 +25,11 @@ A rule's SCOPE decides its delivery channel. Pick one, or none:
 ### `--mandatory` is keyword-only
 
 `--mandatory` marks a **must-never-miss keyword safety rule**: it adds `[!]`, which gives a `[kw:…]` rule an
-exact word-boundary recall floor (it fires whenever a keyword literally appears, regardless of rank) **and**
-a write-gate (an Edit/Write/MultiEdit whose change contains a keyword pauses for your approval).
+exact word-boundary recall floor — it fires whenever a keyword literally appears, regardless of rank, so the
+rule is injected as context 100% of the time on a matching Read/Edit/Write/Bash (never throttled like a
+general keyword fire). (v0.44.0: `[!]` no longer pauses an edit for your approval — the write-gate that did
+that over-fired and couldn't explain itself at the permission card, so it was removed; the rule now surfaces
+as injected context, not a prompt.)
 
 - `--mandatory` **only pairs with `--keywords`** → `[kw:w1,w2] [!]`. Use it for safety rules.
 - The CLI accepts `--mandatory` on `--node`/`--global` but it does nothing there — those fire by scope, so
