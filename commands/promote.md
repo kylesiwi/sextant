@@ -12,9 +12,7 @@ keyword literally appears, regardless of BM25 rank, so the rule is injected as c
 matching Read/Edit/Write/Bash (never throttled like a general keyword fire). Promote therefore only applies to
 keyword rules — `node:`/`global` rules already fire by scope, so the CLI refuses to stamp a redundant `[!]` on them.
 
-> Note (v0.44.0): `[!]` no longer adds a write-gate that paused an edit for your approval. That gate
-> over-fired on ordinary edits and its reason could never render at the file-tool permission card, so it
-> was removed — a matched `[!]` rule now surfaces as injected context, not a permission prompt.
+A matched `[!]` rule surfaces as injected context, never a permission prompt — promoting a rule raises its recall, it does not pause edits for approval.
 
 ## Step 1 — get the line hash
 
