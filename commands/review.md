@@ -14,7 +14,9 @@ set -euo pipefail
 node "${CLAUDE_PLUGIN_ROOT}/bin/review.mjs" --json
 ```
 
-The CLI reads `.sextant/stats.json` and the cerebrum (`.sextant/cerebrum/cerebrum.md`) and emits a JSON payload with three arrays: `promotion`, `demote`, `contradictions`. If `.sextant/stats.json` is absent the CLI prints `no measurement data yet — accumulate via use` and exits 0; once it exists, the arrays are simply empty until rules accrue fires.
+The CLI reads `.sextant/stats.json` and the cerebrum (`.sextant/cerebrum/cerebrum.md`) and emits a JSON payload with four arrays: `promotion`, `demote`, `contradictions`, and `merge_candidates`. If `.sextant/stats.json` is absent the CLI prints `no measurement data yet — accumulate via use` and exits 0; the stats-driven arrays are then empty, but `merge_candidates` (cerebrum-only) still populates.
+
+`merge_candidates` holds up to a few pairs of rules whose bodies are textually similar — `{ score, rules: [{ line_hash, body }, { line_hash, body }] }`. These are CANDIDATES, not duplicates: textual similarity cannot tell a redundant pair from two complementary rules about the same topic. Treat them as "read both and decide", never as an instruction to merge.
 
 ## Step 2 — present the summary
 
@@ -32,15 +34,19 @@ act on a candidate directly. Render the three sections back to the user in plain
 - <body_a>
   vs <body_b>
   reason: <reason>
+
+## Merge candidates (<N>)
+- [<line_hash_a>] <body_a>
+  [<line_hash_b>] <body_b> — similarity <score>
 ```
 
-If any section is empty, write `(none)`. Do not apply changes from the output. Print the results and wait for the user to run `/sextant:promote --line-hash <hash>` / `/sextant:forget --line-hash <hash>` to apply.
+If any section is empty, write `(none)`. Do not apply changes from the output. Print the results and wait for the user to run `/sextant:promote --line-hash <hash>` / `/sextant:forget --line-hash <hash>` to apply. For a merge candidate the user judges redundant, keep the better-worded rule and `/sextant:forget --line-hash <hash>` the other.
 
 Limit each entry to 1-2 lines. If any section exceeds 20 items, show the first 20 and append `(N more — run with --verbose for full list)`.
 
 ## Step 3 — subagent analysis
 
-When the JSON payload contains at least one entry across `promotion`, `demote`, or `contradictions`, dispatch the `sextant-reviewer` subagent via the Task tool with the full JSON payload as input. The subagent returns per-candidate recommendations (1-2 sentences each).
+When the JSON payload contains at least one entry across `promotion`, `demote`, `contradictions`, or `merge_candidates`, dispatch the `sextant-reviewer` subagent via the Task tool with the full JSON payload as input. The subagent returns per-candidate recommendations (1-2 sentences each), including a redundant-vs-complementary call on each merge candidate.
 
 Skip dispatch only when the user explicitly requested a bare list (e.g., "just show the list", "no analysis").
 

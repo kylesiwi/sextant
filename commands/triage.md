@@ -1,13 +1,36 @@
 ---
-description: Triage the cerebrum — list the review queue, then optionally sweep for stale rules. Advisory only.
+description: Triage the cerebrum — list the review queue, then optionally sweep for stale rules. With an entity term, bulk-retire matching rules. Advisory only.
 allowed-tools: [Bash, Read, AskUserQuestion]
-argument-hint: ""
+argument-hint: "[entity-term]"
 ---
 
 Audit the project's cerebrum (`.sextant/cerebrum/cerebrum.md`). The base pass lists rules that need human
 review; then you offer a deeper staleness pass. This command is **advisory** — it prints recommendations and
 the exact commands, and waits for the user to act. For a full rule-by-rule channel/scope/format audit against
 the rule model, use `/sextant:cerebrum-audit` instead.
+
+## Step 0 — entity bulk-retire (only when `$ARGUMENTS` is given)
+
+When the user passes a term (e.g. `/sextant:triage old-staging.example.com`), retire every rule that mentions
+that entity. List the matches first (read-only dry-run) — this changes nothing:
+
+```bash
+set -euo pipefail
+: "${ZSH_VERSION:=}"  # workaround: CC shell snapshot tests $ZSH_VERSION unguarded
+node "${CLAUDE_PLUGIN_ROOT}/bin/cerebrum.mjs" list --match "$ARGUMENTS" --root "$PWD"
+```
+
+Show the matched rules (each line carries its `[<hash>]`). If there are none, say so and stop. Otherwise use
+`AskUserQuestion` to confirm the exact set to archive. Only after an explicit confirm, bulk-retire them in one
+call (pass the hashes comma-separated; it is all-or-nothing and reversible — each rule is appended to
+`archive.md` under a dated marker, never hard-deleted):
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/bin/cerebrum.mjs" forget --line-hash "<hash1>,<hash2>,…" --root "$PWD"
+```
+
+Do not run `forget` without the confirm. To restore one later, copy its line out of `archive.md` and
+re-record it with `/sextant:remember`. With no `$ARGUMENTS`, skip this step and start at Step 1.
 
 ## Step 1 — review queue (always)
 

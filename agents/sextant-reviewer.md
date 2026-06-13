@@ -24,7 +24,9 @@ The payload shape is:
   "demote":    [{ "line_hash", "fires", "ratio", "body", "last_fired" }],
   "contradictions": [{ "line_a": {raw, body, line_hash},
                        "line_b": {raw, body, line_hash},
-                       "reason" }]
+                       "reason" }],
+  "merge_candidates": [{ "score", "rules": [{ "line_hash", "body" },
+                                            { "line_hash", "body" }] }]
 }
 ```
 
@@ -33,7 +35,7 @@ sentence noting the cerebrum has no measurement data and exit.
 
 ## Output (Markdown to stdout)
 
-Four sections, in this order, with no other commentary:
+Five sections, in this order, with no other commentary:
 
 ### Promotion recommendations
 For each promotion candidate, write 1-2 sentences:
@@ -57,8 +59,16 @@ For each conflict pair:
     split into more specific `[node:<path>]` buckets so the
     contradiction doesn't co-fire.
 
+### Merge recommendations
+For each `merge_candidates` pair, READ both bodies and make the call BM25 can't:
+  - **Redundant** (same constraint, reworded) — name the better-worded rule to
+    keep and recommend `/sextant:forget --line-hash <line_hash>` on the other.
+  - **Complementary** (two distinct facts that happen to share vocabulary, e.g.
+    two different rules about the same file) — say "keep both"; do NOT merge.
+  Quote each body briefly and cite both `line_hash`es verbatim.
+
 ### Keyword-rule scoping
-Grep `mandatory.md` for `[kw:...]` rules and flag any that will over- or under-fire:
+Grep the cerebrum (`.sextant/cerebrum/cerebrum.md`) for `[kw:...]` rules and flag any that will over- or under-fire:
   - **Flat-OR rules** — several keywords with no `*`-critical marker (e.g. a 10+
     keyword `[kw:a,b,c,...]`). They fire on any single token, usually noise.
     Recommend marking the 1-2 decisive tokens critical (`*token`) and pruning the

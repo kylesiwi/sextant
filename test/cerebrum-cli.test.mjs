@@ -571,3 +571,78 @@ test('cli: --help prints usage and exits 0', () => {
   assert.equal(r.code, 0);
   assert.match(r.stdout, /Usage: cerebrum/);
 });
+
+// -- lean-interventions T7-B: entity bulk-retire ---------------------------
+
+const T7_STORE = [
+  '- 2026-01-01: [kw:deploy] never deploy staging.example.com on a friday afternoon',
+  '- 2026-01-01: [kw:deploy] avoid deploying to staging.example.com during the weekend freeze',
+  '- 2026-01-01: [node:lib/a.mjs] keep this module pure and dependency free',
+];
+
+test('cli list --match: lists exactly the rules whose body contains the term (read-only)', async (t) => {
+  const root = freshProjectRoot(t);
+  await writeFile(onePath(root), `${CEREBRUM_V2_HEADER}\n${T7_STORE.join('\n')}\n`);
+  const before = await fs.readFile(onePath(root), 'utf8');
+
+  const r = runCli(['list', '--root', root, '--match', 'staging.example.com']);
+  assert.equal(r.code, 0);
+  assert.match(r.stdout, /matching "staging\.example\.com" \(2\)/);
+  assert.match(r.stdout, /friday afternoon/);
+  assert.match(r.stdout, /weekend freeze/);
+  assert.doesNotMatch(r.stdout, /dependency free/, 'non-matching rule must be excluded');
+
+  // dry-run: --match changes nothing on disk.
+  const after = await fs.readFile(onePath(root), 'utf8');
+  assert.equal(after, before, 'list --match must be read-only (dry-run)');
+});
+
+test('cli list --match: case-insensitive; no matches prints (no matches)', async (t) => {
+  const root = freshProjectRoot(t);
+  await writeFile(onePath(root), `${CEREBRUM_V2_HEADER}\n${T7_STORE.join('\n')}\n`);
+  assert.match(runCli(['list', '--root', root, '--match', 'STAGING.EXAMPLE.COM']).stdout, /\(2\)/);
+  const none = runCli(['list', '--root', root, '--match', 'zzz-nope']);
+  assert.match(none.stdout, /matching "zzz-nope" \(0\)/);
+  assert.match(none.stdout, /\(no matches\)/);
+});
+
+test('cli forget: a comma-list bulk-archives all named rules atomically (reversible)', async (t) => {
+  const root = freshProjectRoot(t);
+  await writeFile(onePath(root), `${CEREBRUM_V2_HEADER}\n${T7_STORE.join('\n')}\n`);
+  const h1 = hashLine(T7_STORE[0]);
+  const h2 = hashLine(T7_STORE[1]);
+
+  const r = runCli(['forget', '--root', root, '--line-hash', `${h1},${h2}`]);
+  assert.equal(r.code, 0);
+  assert.match(r.stdout, /Forgot \(archived from cerebrum\.md\) 2 rules/);
+
+  // Both removed from the live store; the unrelated rule survives.
+  const store = await fs.readFile(onePath(root), 'utf8');
+  assert.ok(!store.includes('friday afternoon'));
+  assert.ok(!store.includes('weekend freeze'));
+  assert.match(store, /dependency free/);
+
+  // Both land in archive.md with date markers (reversible, no hard delete).
+  const archive = await fs.readFile(path.join(root, '.sextant', 'cerebrum', 'archive.md'), 'utf8');
+  assert.match(archive, /friday afternoon/);
+  assert.match(archive, /weekend freeze/);
+  assert.equal((archive.match(/<!-- sextant:archived \d{4}-\d{2}-\d{2} -->/g) || []).length, 2);
+});
+
+test('cli forget: a bulk-list with ANY unknown hash aborts all-or-nothing (no partial retire)', async (t) => {
+  const root = freshProjectRoot(t);
+  await writeFile(onePath(root), `${CEREBRUM_V2_HEADER}\n${T7_STORE.join('\n')}\n`);
+  const before = await fs.readFile(onePath(root), 'utf8');
+  const h1 = hashLine(T7_STORE[0]);
+
+  const r = runCli(['forget', '--root', root, '--line-hash', `${h1},deadbeefcafef00d`]);
+  assert.notEqual(r.code, 0);
+  assert.match(r.stderr, /no rule found with hash deadbeefcafef00d/);
+
+  // Nothing changed — the valid hash was NOT archived (all-or-nothing).
+  const after = await fs.readFile(onePath(root), 'utf8');
+  assert.equal(after, before, 'a partial bulk-retire must not happen');
+  let archiveExists = true;
+  try { await fs.access(path.join(root, '.sextant', 'cerebrum', 'archive.md')); } catch { archiveExists = false; }
+  assert.equal(archiveExists, false, 'no archive.md should be written when the bulk op aborts');
+});

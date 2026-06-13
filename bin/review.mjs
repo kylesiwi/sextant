@@ -28,6 +28,7 @@ import {
   summarizeReviewQueue,
   PROMOTION_THRESHOLD,
 } from '../lib/promotion/ladder.mjs';
+import { findMergeCandidates } from '../lib/promotion/mergeCandidates.mjs';
 
 const USAGE = `Usage: review [options]
 
@@ -133,6 +134,24 @@ function renderText(root, summary) {
   return lines.join('\n') + '\n';
 }
 
+// Merge candidates render as an advisory section. They are CANDIDATES, not a
+// verdict — the sextant-reviewer subagent judges redundant-vs-complementary.
+function renderMergeCandidates(candidates) {
+  const lines = [''];
+  lines.push(`Merge candidates (${candidates.length}):`);
+  if (candidates.length === 0) {
+    lines.push('  (none)');
+  } else {
+    for (const c of candidates) {
+      const a = truncate(c.rules[0].body || '(empty)', 80);
+      const b = truncate(c.rules[1].body || '(empty)', 80);
+      lines.push(`  - [${c.rules[0].line_hash}] ${a}`);
+      lines.push(`    [${c.rules[1].line_hash}] ${b}  (similarity ${c.score.toFixed(2)})`);
+    }
+  }
+  return lines.join('\n') + '\n';
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   if (args.help) {
@@ -143,9 +162,16 @@ async function main() {
   const base = durableBase(root);
   const sFile = statsPath(base);
 
+  // Merge candidates depend ONLY on the cerebrum (not stats), so compute them
+  // up front and surface them on both the data and no-data paths. Best-effort:
+  // a parse/index failure must never break the review.
+  const cerebrum = await loadFullCerebrum(root);
+  let merge_candidates = [];
+  try { merge_candidates = findMergeCandidates(cerebrum.lines); } catch { merge_candidates = []; }
+
   // If no stats.json has ever been written we print a friendly no-data line
   // and bail. The cerebrum may still exist, but without measurement data
-  // there's nothing to promote or demote.
+  // there's nothing to promote or demote (merge candidates still surface).
   let exists = true;
   try { await fsp.access(sFile); } catch { exists = false; }
 
@@ -157,17 +183,18 @@ async function main() {
         promotion: [],
         demote: [],
         contradictions: [],
+        merge_candidates,
         message: 'no measurement data yet — accumulate via use',
       }) + '\n');
       return 0;
     }
     process.stdout.write(`Sextant review summary (root: ${root})\n`);
     process.stdout.write('  no measurement data yet — accumulate via use\n');
+    process.stdout.write(renderMergeCandidates(merge_candidates));
     return 0;
   }
 
   const stats = await readStats(base);
-  const cerebrum = await loadFullCerebrum(root);
   const summary = summarizeReviewQueue(cerebrum, stats);
 
   if (args.json) {
@@ -177,10 +204,12 @@ async function main() {
       threshold: PROMOTION_THRESHOLD,
       session_count: stats.session_count,
       ...summary,
+      merge_candidates,
     }) + '\n');
     return 0;
   }
   process.stdout.write(renderText(root, summary));
+  process.stdout.write(renderMergeCandidates(merge_candidates));
   return 0;
 }
 

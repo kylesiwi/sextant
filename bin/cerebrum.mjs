@@ -98,8 +98,12 @@ Subcommands:
              file), --global = always-on, --keywords = BM25-ranked. --mandatory ([!])
              is kw-only (recall floor + write-gate) — pair only with --keywords.
   promote --line-hash "<hash>"   Add [!] to a [kw:…] rule (kw rules only).
-  forget  --line-hash "<hash>"   Archive a rule (cerebrum.md → archive.md).
-  list                           List every rule with its line hash.
+  forget  --line-hash "<hash>[,<hash>…]"
+                                 Archive one or more rules (cerebrum.md → archive.md).
+                                 A comma-list is an all-or-nothing bulk retire.
+  list [--match "<term>"]        List every rule with its line hash; --match
+                                 filters to rules whose body contains <term>
+                                 (case-insensitive; read-only retire dry-run).
   audit
   reconcile
   migrate [--dry-run] [--rollback] [--force]
@@ -111,7 +115,7 @@ Global options:
   -h, --help      Print this message.`;
 
 function parseArgs(argv) {
-  const out = { root: null, text: null, textStdin: false, node: null, global: false, mandatory: false, keywords: null, criticalKeywords: null, lineHash: null, dryRun: false, rollback: false, force: false, help: false };
+  const out = { root: null, text: null, textStdin: false, node: null, global: false, mandatory: false, keywords: null, criticalKeywords: null, lineHash: null, match: null, dryRun: false, rollback: false, force: false, help: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--root') out.root = argv[++i];
@@ -143,6 +147,7 @@ function parseArgs(argv) {
       process.stderr.write('cerebrum: --legacy-keywords is deprecated and ignored (the legacy-keyword audit scan was removed in cerebrum-v2).\n');
     }
     else if (a === '--line-hash') out.lineHash = argv[++i];
+    else if (a === '--match') out.match = argv[++i];
     else if (a === '--help' || a === '-h') out.help = true;
     else {
       process.stderr.write(`cerebrum: unknown arg "${a}"\n`);
@@ -398,6 +403,14 @@ async function cmdForget(root, args) {
     process.stderr.write('cerebrum forget: --line-hash is required\n');
     return 1;
   }
+  // --line-hash accepts a comma-separated list for bulk retire (the
+  // /sextant:triage <entity> path). A single hash (no comma) is the unchanged
+  // path. De-dup while preserving order.
+  const requested = [...new Set(args.lineHash.split(',').map((h) => h.trim()).filter(Boolean))];
+  if (requested.length === 0) {
+    process.stderr.write('cerebrum forget: --line-hash is required\n');
+    return 1;
+  }
 
   await ensureCerebrumDir(root);
   const cPath = cerebrumPath(root);
@@ -405,20 +418,29 @@ async function cmdForget(root, args) {
   // cerebrum-v2 (T3.5): forget operates on the single store. Locate (read-only)
   // for a precise not-found message; the authoritative remove re-finds by hash.
   const parsed = await readCerebrumFile(cPath);
-  const original = parsed.lines.find(
-    (e) => e.kind === 'rule' && hashLine(e.raw) === args.lineHash,
-  );
-  if (!original) {
-    process.stderr.write(`cerebrum forget: no rule found with hash ${args.lineHash}\n`);
+  const originals = [];
+  const missing = [];
+  for (const h of requested) {
+    const e = parsed.lines.find((x) => x.kind === 'rule' && hashLine(x.raw) === h);
+    if (e) originals.push({ hash: h, raw: e.raw }); else missing.push(h);
+  }
+  // All-or-nothing: a partial bulk-retire (some archived, some not) is worse
+  // than a clear error the caller can correct, so any miss aborts before any
+  // write happens.
+  if (missing.length > 0) {
+    process.stderr.write(`cerebrum forget: no rule found with hash ${missing.join(', ')}\n`);
     return 1;
   }
 
   // Order so a failure errs toward a recoverable duplicate, never a lost rule:
-  // ARCHIVE first (the rule's audit copy), THEN remove from the store. Both go
-  // through the locked parse/serialize path — no raw appendFile.
+  // ARCHIVE first (the rules' audit copies), THEN remove from the store. Both go
+  // through the locked parse/serialize path — no raw appendFile. The whole set
+  // archives in ONE locked write and removes in ONE locked write (atomic per
+  // file), so a bulk retire can't tear into a half-applied state.
   const today = todayUtc();
   const marker = `<!-- sextant:archived ${today} -->`;
-  const archiveEntries = parseCerebrum(`${marker}\n${original.raw}`).lines;
+  const archiveText = originals.map((o) => `${marker}\n${o.raw}`).join('\n');
+  const archiveEntries = parseCerebrum(archiveText).lines;
   const archived = await updateCerebrumFile(
     archivePath(root),
     (p) => appendEntries(p, archiveEntries),
@@ -429,25 +451,28 @@ async function cmdForget(root, args) {
     return 1;
   }
 
+  const removeSet = new Set(requested);
   const removed = await updateCerebrumFile(
     cPath,
     (p) => {
-      const idx = p.lines.findIndex(
-        (e) => e.kind === 'rule' && hashLine(e.raw) === args.lineHash,
-      );
-      if (idx >= 0) p.lines.splice(idx, 1);
+      p.lines = p.lines.filter((e) => !(e.kind === 'rule' && removeSet.has(hashLine(e.raw))));
       return p;
     },
     { lockTimeoutMs: CLI_LOCK_TIMEOUT_MS },
   );
   if (removed === null) {
     process.stderr.write(
-      `cerebrum forget: archived the rule but could not lock cerebrum.md to remove it — it still exists there; retry forget on hash ${args.lineHash}\n`,
+      `cerebrum forget: archived the rule(s) but could not lock cerebrum.md to remove them — they still exist there; retry forget on hash ${requested.join(',')}\n`,
     );
     return 1;
   }
 
-  process.stdout.write(`Forgot (archived from cerebrum.md): ${original.raw.trim()}\n`);
+  if (originals.length === 1) {
+    process.stdout.write(`Forgot (archived from cerebrum.md): ${originals[0].raw.trim()}\n`);
+  } else {
+    process.stdout.write(`Forgot (archived from cerebrum.md) ${originals.length} rules:\n`);
+    for (const o of originals) process.stdout.write(`  [${o.hash}] ${o.raw.trim()}\n`);
+  }
   return 0;
 }
 
@@ -492,12 +517,22 @@ async function cmdAudit(root, args) {
 
 // List every rule in the store with its line hash, so the hash is on hand for
 // `promote` / `forget`. Same [<hash>] <buckets> <body> shape as `audit`.
-async function cmdList(root) {
+async function cmdList(root, args = {}) {
   const parsed = await readCerebrumFile(cerebrumPath(root));
-  const rules = (parsed.lines || []).filter((e) => e.kind === 'rule');
-  process.stdout.write(`cerebrum.md (${rules.length} rules):\n`);
+  let rules = (parsed.lines || []).filter((e) => e.kind === 'rule');
+  // --match <term>: case-insensitive substring filter on the rule body. The
+  // read-only dry-run for /sextant:triage <entity> bulk-retire — it lists which
+  // rules a subsequent `forget` would archive, and changes nothing itself.
+  const term = typeof args.match === 'string' ? args.match.trim() : '';
+  if (term.length > 0) {
+    const needle = term.toLowerCase();
+    rules = rules.filter((e) => typeof e.body === 'string' && e.body.toLowerCase().includes(needle));
+  }
+  process.stdout.write(term.length > 0
+    ? `cerebrum.md rules matching "${term}" (${rules.length}):\n`
+    : `cerebrum.md (${rules.length} rules):\n`);
   if (rules.length === 0) {
-    process.stdout.write('  (empty)\n');
+    process.stdout.write(term.length > 0 ? '  (no matches)\n' : '  (empty)\n');
     return 0;
   }
   for (const e of rules) {
@@ -770,7 +805,7 @@ async function main() {
     case 'promote':   return await cmdPromote(root, args);
     case 'forget':    return await cmdForget(root, args);
     case 'audit':     return await cmdAudit(root, args);
-    case 'list':      return await cmdList(root);
+    case 'list':      return await cmdList(root, args);
     case 'reconcile': return await cmdReconcile(root, args);
     case 'migrate':   return await cmdMigrate(root, args);
     case 'doctor':    return await cmdDoctor(root);
