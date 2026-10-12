@@ -25,7 +25,7 @@
 //   the process exits 0.
 
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { setTimeout as sleep } from 'node:timers/promises';
 
 import { runtimeBase, durableBase } from '../lib/paths.mjs';
@@ -181,7 +181,7 @@ async function main() {
 
   let mod;
   try {
-    mod = await import(handlerPath);
+    mod = await import(pathToFileURL(handlerPath).href);
   } catch (err) {
     // ERR_MODULE_NOT_FOUND is the "phase 0 hasn't implemented this yet"
     // case; everything else is a real bug we still don't want to crash on.

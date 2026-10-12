@@ -280,6 +280,25 @@ test('dispatcher: empty stdin exits 0 (parse error path)', async (t) => {
   assert.equal(r.code, 0);
 });
 
+// Regression: the handler is loaded via dynamic import() of an absolute path.
+// On Windows a bare `C:\...` path is rejected by the ESM loader (it parses
+// `c:` as a URL scheme), so every hook silently no-op'd with exit 0. The path
+// must go through pathToFileURL().
+test('dispatcher: handler module imports cleanly (no handler-import error)', async (t) => {
+  const base = freshTempBase();
+  t.after(() => fs.rm(base, { recursive: true, force: true }));
+
+  const r = await runDispatcher('Notification', {
+    session_id: 'cli-import',
+    cwd: base,
+    hook_event_name: 'Notification',
+    message: 'probe',
+  }, base);
+  assert.equal(r.code, 0, `stderr=${r.stderr}`);
+  assert.doesNotMatch(r.stderr, /handler-import error/);
+  assert.doesNotMatch(r.stderr, /handler missing/);
+});
+
 test('dispatcher: Notification end-to-end logs and exits 0', async (t) => {
   const base = freshTempBase();
   t.after(() => fs.rm(base, { recursive: true, force: true }));
